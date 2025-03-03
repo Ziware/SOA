@@ -140,7 +140,7 @@ model {
       }
       component wallDB "Wall Database" {
         description "База данных для хранения постов и комментариев"
-        technology "PostgreSQL"
+        technology "Cassandra"
         style {
           shape storage
         }
@@ -183,10 +183,10 @@ model {
   socialNetwork.users.registration -> socialNetwork.users.usersDB "Пишет и читает" "SQL"
   socialNetwork.users.auth -> socialNetwork.users.usersDB "Читает" "SQL"
   socialNetwork.users.profile -> socialNetwork.users.usersDB "Пишет и читает" "SQL"
-  socialNetwork.wall.wallComponent -> socialNetwork.users.usersDB "Пишет и читает" "SQL"
+  socialNetwork.wall.wallComponent -> socialNetwork.wall.wallDB "Пишет и читает" "SQL"
 
-  socialNetwork.wall.wallComponent -> socialNetwork.kafka "Публикует/Подписывается" "Лайки, комметарии, просмотры"
-  socialNetwork.stats.stats -> socialNetwork.kafka "Публикует/Подписывается" "Лайки, комметарии, просмотры"
+  socialNetwork.wall.wallComponent -> socialNetwork.kafka "Публикует" "Лайки, комметарии, просмотры"
+  socialNetwork.kafka -> socialNetwork.stats.stats "Подписывается" "Лайки, комметарии, просмотры"
 }
 
 views {
