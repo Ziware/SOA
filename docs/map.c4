@@ -1,0 +1,206 @@
+specification {
+  element person {
+    style {
+      shape person
+      color muted
+    }
+  }
+  element softwareSystem {
+    style {
+      color sky
+    }
+  }
+  element container {
+    style {
+      color blue
+    }
+  }
+  element component {
+    style {
+      color secondary
+    }
+  }
+  element table
+  element column
+}
+
+model {
+  user = person "Пользователь"
+
+  socialNetwork = softwareSystem "Социальная сеть" {
+
+    apiServer = container "API Server" {
+      description "Принимает запросы пользователей, обрабатывает, собирает ответ"
+      technology "Go, Docker"
+    }
+
+    stats = container "Stats Service" {
+      description "Подсчет статистики: лайки, комментарии, просмотры"
+      technology "Go, Docker"
+
+      component stats "Stats Component" {
+        description "Обрабатывает статистические данные"
+        technology "REST API"
+      }
+      component statsDB "Stats Database" {
+        description "База данных для хранения статистики"
+        technology "ClickHouse"
+        style {
+          shape storage
+        }
+        table messageStat {
+          column messageId
+          column likeCount
+          column viewsCount
+          column commentCount
+        }
+        table userStat {
+          column userId
+          column viewed { description "Количество просмотренных сообщений" }
+          column liked { description "Количество лайкнутых сообщений" }
+          column comments { description "Количество оставленных комментариев" }
+          column posts { description "Количество постов" }
+        }
+        table wallStat {
+          column userId
+          column viewed { description "Количество просмотренных сообщений" }
+          column liked { description "Количество лайкнутых сообщений" }
+          column posts { description "Количество оставленных комментариев" }
+          column comments { description "Количество постов" }
+        }
+        table likeStat {
+          column userId
+          column messageId
+          column timestamp
+        }
+        table viewStat {
+          column userId
+          column messageId
+          column timestamp
+        }
+      }
+    }
+
+    users = container "Users Service" {
+      description "Предоставление информации о пользователях, авторизация, аутентификация"
+      technology "Go, Docker"
+
+      component auth "Auth Component" {
+        description "Аутентификация пользователя"
+        technology "REST API"
+      }
+      component registration "Registration Component" {
+        description "Регистрация пользователя"
+        technology "REST API"
+      }
+      component profile "Profile Component" {
+        description "Получение и изменение профиля пользователя"
+        technology "REST API"
+      }
+      component usersDB "Users Database" {
+        description "Хранение информации про пользователей"
+        technology "PostgreSQL"
+        style {
+          shape storage
+        }
+        table passwords {
+          column login
+          column passwordHash
+          column userId
+          column registrationTimestamp
+          column changeTimestamp { description "Время смены пароля" }
+        }
+        table profile {
+          column userId
+          column login
+          column name
+          column surname
+          column birthDate
+          column email
+          column admin { description "Является ли админом" }
+          column banned { description "Может ли писать"}
+        }
+        table wallSettings {
+          column userId
+          column readOnly
+          column hideStats
+          column hideBithdate
+          column hideEmail
+        }
+      }
+    }
+
+    wall = container "Wall Service" {
+      description "Сохранение и получение постов и комментариев"
+      technology "Go, Docker"
+
+      component wallComponent "Wall Component" {
+        description "Обработка постов и комментариев"
+        technology "REST API"
+      }
+      component wallDB "Wall Database" {
+        description "База данных для хранения постов и комментариев"
+        technology "Cassandra"
+        style {
+          shape storage
+        }
+        table wallData {
+          column messageId
+          column userId
+          column parentMessageId
+          column message
+          column timestamp
+        }
+        table editData {
+          column messageId
+          column editedMessage
+          column timestamp
+        }
+        table deletedMessages {
+          column messageId
+          column byUserId
+          column timestamp
+        }
+      }
+    }
+
+    kafka = container "Kafka" {
+      description "Пересылает сообщения между сервисами"
+      technology "Message Broker"
+      style {
+        shape queue
+      }
+    }
+  }
+
+  user -> socialNetwork.apiServer "Использует" "HTTPS"
+
+  socialNetwork.apiServer -> socialNetwork.stats "Взаимодействует" "HTTP"
+  socialNetwork.apiServer -> socialNetwork.users "Взаимодействует" "HTTP"
+  socialNetwork.apiServer -> socialNetwork.wall "Взаимодействует" "HTTP"
+
+  socialNetwork.stats.stats -> socialNetwork.stats.statsDB "Пишет и читает" "SQL"
+  socialNetwork.users.registration -> socialNetwork.users.usersDB "Пишет и читает" "SQL"
+  socialNetwork.users.auth -> socialNetwork.users.usersDB "Читает" "SQL"
+  socialNetwork.users.profile -> socialNetwork.users.usersDB "Пишет и читает" "SQL"
+  socialNetwork.wall.wallComponent -> socialNetwork.wall.wallDB "Пишет и читает" "SQL"
+
+  socialNetwork.wall.wallComponent -> socialNetwork.kafka "Публикует" "Лайки, комметарии, просмотры"
+  socialNetwork.kafka -> socialNetwork.stats.stats "Подписывается" "Лайки, комметарии, просмотры"
+}
+
+views {
+  view index {
+    title "Архитектура Социальной сети"
+    include *
+  }
+  view tables {
+    title "Описание ER диаграммы сервисов"
+    include socialNetwork.stats.statsDB
+    include socialNetwork.stats.statsDB.**
+    include socialNetwork.users.usersDB
+    include socialNetwork.users.usersDB.**
+    include socialNetwork.wall.wallDB
+    include socialNetwork.wall.wallDB.**
+  }
+}
