@@ -38,6 +38,7 @@ func GetProfileHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	writer.WriteHeader(http.StatusOK)
 	writer.Write(data)
 }
 
@@ -101,5 +102,6 @@ func PutProfileHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	writer.WriteHeader(http.StatusOK)
 	writer.Write(data)
 }

@@ -163,7 +163,6 @@ func RegisterHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	writer.WriteHeader(http.StatusCreated)
 	var resp TRegisterResponse
 	resp.Message = "Successful register"
 	resp.UserId = user.UserId.String()
@@ -172,6 +171,7 @@ func RegisterHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	writer.WriteHeader(http.StatusCreated)
 	writer.Write(data)
 }
 
@@ -212,7 +212,6 @@ func LoginHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	writer.WriteHeader(http.StatusCreated)
 	var resp TLoginResponse
 	resp.Message = "Successful login"
 	resp.User = *user
@@ -221,5 +220,6 @@ func LoginHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	writer.WriteHeader(http.StatusOK)
 	writer.Write(data)
 }

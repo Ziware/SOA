@@ -37,7 +37,6 @@ services:
       - app-network
       - db-network
 
-  # PostgreSQL база данных
   postgres:
     image: postgres:15
     container_name: user-service-postgres

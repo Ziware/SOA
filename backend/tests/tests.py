@@ -66,12 +66,12 @@ def test_login():
     print(f"Cookies: {session.cookies.get_dict()}")
     
     # Assert expected behavior
-    if response.status_code == 201:
+    if response.status_code == 200:
         print("✅ User login successful!")
     else:
         print("❌ User login failed.")
     
-    return response.status_code == 201
+    return response.status_code == 200
 
 def test_get_profile():
     """Test get user profile endpoint"""
