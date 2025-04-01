@@ -1,31 +1,20 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 
+	user "user-service/server/user"
+
 	"github.com/google/uuid"
 )
 
-func GetProfileHandler(writer http.ResponseWriter, req *http.Request) {
+func (us *UserService) GetProfile(ctx context.Context, req *user.GetProfileRequest) (*user.GetProfileResponse, error) {
 	log.Printf("Get profile")
-	err := ctx.authClient.Validate(req)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
-		return
-	}
-	userIdStr, err := ctx.authClient.GetUserId(req)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	userId, err := uuid.Parse(userIdStr)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	user, err := ctx.database.GetUserByID(userId)
+
+	user, err := cls.database.GetUserByID(req.UserId)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -42,7 +31,7 @@ func GetProfileHandler(writer http.ResponseWriter, req *http.Request) {
 	writer.Write(data)
 }
 
-func ParsePutProfileRequest(user *TUser, newParams *TPutProfileRequest) {
+func parsePutProfileRequest(user *TUser, newParams *TPutProfileRequest) {
 	if newParams.BirthDate != "" {
 		user.BirthDate = newParams.BirthDate
 	}
@@ -60,7 +49,7 @@ func ParsePutProfileRequest(user *TUser, newParams *TPutProfileRequest) {
 	}
 }
 
-func PutProfileHandler(writer http.ResponseWriter, req *http.Request) {
+func (us *UserService) PutProfile(ctx context.Context, req *user.PutProfileRequest) (*user.PutProfileResponse, error) {
 	log.Printf("Change profile")
 	var newProfileData TPutProfileRequest
 	err := json.NewDecoder(req.Body).Decode(&newProfileData)
@@ -68,12 +57,12 @@ func PutProfileHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = ctx.authClient.Validate(req)
+	err = cls.authClient.Validate(req)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusUnauthorized)
 		return
 	}
-	userIdStr, err := ctx.authClient.GetUserId(req)
+	userIdStr, err := cls.authClient.GetUserId(req)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -83,13 +72,13 @@ func PutProfileHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	user, err := ctx.database.GetUserByID(userId)
+	user, err := cls.database.GetUserByID(userId)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	ParsePutProfileRequest(user, &newProfileData)
-	err = ctx.database.UpdateUser(user)
+	parsePutProfileRequest(user, &newProfileData)
+	err = cls.database.UpdateUser(user)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return

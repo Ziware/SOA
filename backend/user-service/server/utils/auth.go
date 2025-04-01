@@ -1,12 +1,15 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	user "user-service/server/user"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -120,7 +123,7 @@ func (auth *TAuthClient) SetCookie(login string, userId string, writer http.Resp
 	return nil
 }
 
-func RegisterHandler(writer http.ResponseWriter, req *http.Request) {
+func (us *UserService) Register(ctx context.Context, req *user.RegisterRequest) (*user.RegisterResponse, error) {
 	log.Printf("Register user")
 	var regData TRegisterRequest
 	err := json.NewDecoder(req.Body).Decode(&regData)
@@ -132,7 +135,7 @@ func RegisterHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, "check your query, there 3 required fields: login, email, password", http.StatusBadRequest)
 		return
 	}
-	exists, err := ctx.database.CheckUserExistsByLogin(regData.Login)
+	exists, err := cls.database.CheckUserExistsByLogin(regData.Login)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -153,12 +156,12 @@ func RegisterHandler(writer http.ResponseWriter, req *http.Request) {
 	user.Email = regData.Email
 	user.PassHash = string(hashedPassword)
 	user.CreatedAt = time.Now()
-	err = ctx.database.CreateUser(&user)
+	err = cls.database.CreateUser(&user)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = ctx.authClient.SetCookie(user.Login, user.UserId.String(), writer)
+	err = cls.authClient.SetCookie(user.Login, user.UserId.String(), writer)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -175,7 +178,7 @@ func RegisterHandler(writer http.ResponseWriter, req *http.Request) {
 	writer.Write(data)
 }
 
-func LoginHandler(writer http.ResponseWriter, req *http.Request) {
+func (us *UserService) Login(ctx context.Context, req *user.LoginRequest) (*user.LoginResponse, error) {
 	log.Printf("Login user")
 	var loginData TLoginRequest
 	err := json.NewDecoder(req.Body).Decode(&loginData)
@@ -187,7 +190,7 @@ func LoginHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, "check your query, there 2 required fields: login, password", http.StatusBadRequest)
 		return
 	}
-	exists, err := ctx.database.CheckUserExistsByLogin(loginData.Login)
+	exists, err := cls.database.CheckUserExistsByLogin(loginData.Login)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -196,7 +199,7 @@ func LoginHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, "user with this login doesn't exists", http.StatusNotFound)
 		return
 	}
-	user, err := ctx.database.GetUserByLogin(loginData.Login)
+	user, err := cls.database.GetUserByLogin(loginData.Login)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -207,7 +210,7 @@ func LoginHandler(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, "your password is incorrect", http.StatusUnauthorized)
 		return
 	}
-	err = ctx.authClient.SetCookie(user.Login, user.UserId.String(), writer)
+	err = cls.authClient.SetCookie(user.Login, user.UserId.String(), writer)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
