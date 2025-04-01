@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	user "user-service/server/user"
+
 	"github.com/google/uuid"
 )
 
@@ -93,21 +95,25 @@ type TDatabase struct {
 	db *sql.DB
 }
 
-type TContext struct {
+type TClients struct {
 	authClient *TAuthClient
 	database   *TDatabase
 }
 
-var ctx *TContext
+type UserService struct {
+	user.UnimplementedUserProfileServiceServer
+}
+
+var cls *TClients
 
 func NewContext(authConf TAuthConfig, dbConf TDBConfig) error {
-	ctx = &TContext{}
+	cls = &TClients{}
 	var err error
-	ctx.authClient, err = NewAuthClient(authConf.JwtPrivateStr, authConf.JwtPublicStr)
+	cls.authClient, err = NewAuthClient(authConf.JwtPrivateStr, authConf.JwtPublicStr)
 	if err != nil {
 		return err
 	}
-	ctx.database, err = NewDatabase(dbConf)
+	cls.database, err = NewDatabase(dbConf)
 	if err != nil {
 		return err
 	}
