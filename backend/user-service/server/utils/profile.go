@@ -50,7 +50,7 @@ func ParsePutProfileRequest(user *TUser, newParams *TPutProfileRequest) {
 		user.PhoneNumber = newParams.PhoneNumber
 	}
 	if newParams.Email != "" {
-		user.Email = newParams.PhoneNumber
+		user.Email = newParams.Email
 	}
 	if newParams.Name != "" {
 		user.Name = newParams.Name
