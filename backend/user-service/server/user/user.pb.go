@@ -271,7 +271,7 @@ func (x *PutProfileRequest) GetUser() *User {
 
 type PutProfileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -306,11 +306,11 @@ func (*PutProfileResponse) Descriptor() ([]byte, []int) {
 	return file_user_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *PutProfileResponse) GetSuccess() bool {
+func (x *PutProfileResponse) GetUser() *User {
 	if x != nil {
-		return x.Success
+		return x.User
 	}
-	return false
+	return nil
 }
 
 type RegisterRequest struct {
@@ -541,9 +541,10 @@ const file_user_proto_rawDesc = "" +
 	".user.UserR\x04user\"3\n" +
 	"\x11PutProfileRequest\x12\x1e\n" +
 	"\x04user\x18\x01 \x01(\v2\n" +
-	".user.UserR\x04user\".\n" +
-	"\x12PutProfileResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"Y\n" +
+	".user.UserR\x04user\"4\n" +
+	"\x12PutProfileResponse\x12\x1e\n" +
+	"\x04user\x18\x01 \x01(\v2\n" +
+	".user.UserR\x04user\"Y\n" +
 	"\x0fRegisterRequest\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
@@ -592,21 +593,22 @@ var file_user_proto_goTypes = []any{
 var file_user_proto_depIdxs = []int32{
 	0, // 0: user.GetProfileResponse.user:type_name -> user.User
 	0, // 1: user.PutProfileRequest.user:type_name -> user.User
-	0, // 2: user.RegisterResponse.user:type_name -> user.User
-	0, // 3: user.LoginResponse.user:type_name -> user.User
-	1, // 4: user.UserProfileService.GetProfile:input_type -> user.GetProfileRequest
-	3, // 5: user.UserProfileService.PutProfile:input_type -> user.PutProfileRequest
-	5, // 6: user.UserProfileService.Register:input_type -> user.RegisterRequest
-	7, // 7: user.UserProfileService.Login:input_type -> user.LoginRequest
-	2, // 8: user.UserProfileService.GetProfile:output_type -> user.GetProfileResponse
-	4, // 9: user.UserProfileService.PutProfile:output_type -> user.PutProfileResponse
-	6, // 10: user.UserProfileService.Register:output_type -> user.RegisterResponse
-	8, // 11: user.UserProfileService.Login:output_type -> user.LoginResponse
-	8, // [8:12] is the sub-list for method output_type
-	4, // [4:8] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0, // 2: user.PutProfileResponse.user:type_name -> user.User
+	0, // 3: user.RegisterResponse.user:type_name -> user.User
+	0, // 4: user.LoginResponse.user:type_name -> user.User
+	1, // 5: user.UserProfileService.GetProfile:input_type -> user.GetProfileRequest
+	3, // 6: user.UserProfileService.PutProfile:input_type -> user.PutProfileRequest
+	5, // 7: user.UserProfileService.Register:input_type -> user.RegisterRequest
+	7, // 8: user.UserProfileService.Login:input_type -> user.LoginRequest
+	2, // 9: user.UserProfileService.GetProfile:output_type -> user.GetProfileResponse
+	4, // 10: user.UserProfileService.PutProfile:output_type -> user.PutProfileResponse
+	6, // 11: user.UserProfileService.Register:output_type -> user.RegisterResponse
+	8, // 12: user.UserProfileService.Login:output_type -> user.LoginResponse
+	9, // [9:13] is the sub-list for method output_type
+	5, // [5:9] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_user_proto_init() }

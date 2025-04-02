@@ -8,4 +8,4 @@ WORKDIR /app/api-gateway/server
 RUN go mod download -x
 RUN go build
 
-ENTRYPOINT ["./server"]
+ENTRYPOINT ["./server", "--public", "public.key"]

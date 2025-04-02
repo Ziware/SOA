@@ -2,36 +2,27 @@ package utils
 
 import (
 	"context"
-	"encoding/json"
 	"log"
-	"net/http"
 
-	user "user-service/server/user"
+	user "messenger/user-service/server/user"
 
-	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (us *UserService) GetProfile(ctx context.Context, req *user.GetProfileRequest) (*user.GetProfileResponse, error) {
 	log.Printf("Get profile")
-
-	user, err := cls.database.GetUserByID(req.UserId)
+	usr, err := cls.database.GetUserByID(req.UserId)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
-	var resp TGetProfileResponse
-	resp.Message = "Successful Profile get"
-	resp.User = *user
-	data, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+	resp := user.GetProfileResponse{
+		User: usr,
 	}
-	writer.WriteHeader(http.StatusOK)
-	writer.Write(data)
+	return &resp, nil
 }
 
-func parsePutProfileRequest(user *TUser, newParams *TPutProfileRequest) {
+func parsePutProfileRequest(user *user.User, newParams *user.User) {
 	if newParams.BirthDate != "" {
 		user.BirthDate = newParams.BirthDate
 	}
@@ -51,46 +42,17 @@ func parsePutProfileRequest(user *TUser, newParams *TPutProfileRequest) {
 
 func (us *UserService) PutProfile(ctx context.Context, req *user.PutProfileRequest) (*user.PutProfileResponse, error) {
 	log.Printf("Change profile")
-	var newProfileData TPutProfileRequest
-	err := json.NewDecoder(req.Body).Decode(&newProfileData)
+	usr, err := cls.database.GetUserByID(req.User.UserId)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
-	err = cls.authClient.Validate(req)
+	parsePutProfileRequest(usr, req.User)
+	err = cls.database.UpdateUser(usr)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
-	userIdStr, err := cls.authClient.GetUserId(req)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+	resp := user.PutProfileResponse{
+		User: usr,
 	}
-	userId, err := uuid.Parse(userIdStr)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	user, err := cls.database.GetUserByID(userId)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	parsePutProfileRequest(user, &newProfileData)
-	err = cls.database.UpdateUser(user)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	var resp TPutProfileResponse
-	resp.Message = "Successful profile update"
-	resp.User = *user
-	data, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writer.WriteHeader(http.StatusOK)
-	writer.Write(data)
+	return &resp, nil
 }

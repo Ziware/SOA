@@ -2,73 +2,11 @@ package utils
 
 import (
 	"crypto/rsa"
-	"database/sql"
-	"time"
 
-	user "user-service/server/user"
+	user "messenger/user-service/server/user"
 
-	"github.com/google/uuid"
+	"github.com/go-redis/redis/v8"
 )
-
-type TUser struct {
-	UserId      uuid.UUID `json:"user_id"`
-	Login       string    `json:"login"`
-	Email       string    `json:"email"`
-	PassHash    string    `json:"password_hash"`
-	Name        string    `json:"name"`
-	Surname     string    `json:"surname"`
-	BirthDate   string    `json:"birth_date"`
-	PhoneNumber string    `json:"phone_number"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-//// Handlers
-
-type TRegisterRequest struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
-}
-
-type TRegisterResponse struct {
-	Message string `json:"message"`
-	UserId  string `json:"user_id"`
-}
-
-type TLoginRequest struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-}
-
-type TLoginResponse struct {
-	Message string `json:"message"`
-	User    TUser  `json:"user"`
-}
-
-type TGetProfileRequest struct{}
-
-type TGetProfileResponse struct {
-	Message string `json:"message"`
-	User    TUser  `json:"user"`
-}
-
-type TPutProfileRequest struct {
-	Email       string `json:"email"`
-	Name        string `json:"name"`
-	Surname     string `json:"surname"`
-	BirthDate   string `json:"birth_date"`
-	PhoneNumber string `json:"phone_number"`
-}
-
-type TPutProfileResponse struct {
-	Message string `json:"message"`
-	User    TUser  `json:"user"`
-}
-
-type TErrorResponse struct {
-	Error string `json:"error"`
-}
 
 //// Configs + Clients
 
@@ -83,16 +21,12 @@ type TAuthClient struct {
 }
 
 type TDBConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
+	Host string
+	Port int
 }
 
 type TDatabase struct {
-	db *sql.DB
+	db *redis.Client
 }
 
 type TClients struct {

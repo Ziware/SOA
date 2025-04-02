@@ -36,7 +36,7 @@ message PutProfileRequest {
 }
 
 message PutProfileResponse {
-  bool success = 1;
+  User user = 1;
 }
 
 message RegisterRequest {

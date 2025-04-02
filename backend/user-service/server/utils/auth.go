@@ -2,18 +2,21 @@ package utils
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	user "user-service/server/user"
+	user "messenger/user-service/server/user"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // Read private + public keys
@@ -38,6 +41,21 @@ func NewAuthClient(jwtPrivatePath string, jwtPublicPath string) (*TAuthClient, e
 	}
 	auth.JwtPublic = jwtPublic
 	log.Println("Successfull init of auth client")
+	return &auth, nil
+}
+
+func NewValidateClient(jwtPublicPath string) (*TAuthClient, error) {
+	var auth TAuthClient
+	public, err := os.ReadFile(jwtPublicPath)
+	if err != nil {
+		return nil, err
+	}
+	jwtPublic, err := jwt.ParseRSAPublicKeyFromPEM(public)
+	if err != nil {
+		return nil, err
+	}
+	auth.JwtPublic = jwtPublic
+	log.Println("Successfull init of validate client")
 	return &auth, nil
 }
 
@@ -101,6 +119,9 @@ func (auth *TAuthClient) Validate(req *http.Request) error {
 }
 
 func (auth *TAuthClient) GetToken(login string, user_id string) (string, error) {
+	if auth.JwtPrivate == nil {
+		return "", fmt.Errorf("your client can only validate tokens")
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"login":   login,
 		"user_id": user_id,
@@ -109,120 +130,107 @@ func (auth *TAuthClient) GetToken(login string, user_id string) (string, error) 
 	return token.SignedString(auth.JwtPrivate)
 }
 
-func (auth *TAuthClient) SetCookie(login string, userId string, writer http.ResponseWriter) error {
+func (auth *TAuthClient) SetMeta(login string, userId string, ctx context.Context) error {
 	tokenString, err := auth.GetToken(login, userId)
 	if err != nil {
 		return fmt.Errorf("failed to sign the jwt token: %v", err.Error())
 	}
+	md := metadata.Pairs(
+		"cookie", tokenString,
+		"expires", time.Now().Add(time.Hour*24).Format(time.RFC3339),
+	)
+	log.Printf("Sending meta data")
+	grpc.SendHeader(ctx, md)
+
+	return nil
+}
+
+func (auth *TAuthClient) SetCookie(md metadata.MD, writer http.ResponseWriter) error {
+	token, exists := md["cookie"]
+	if !exists {
+		return fmt.Errorf("cookie key not exists")
+	}
+	expires, exists := md["expires"]
+	if !exists {
+		return fmt.Errorf("expires key not exists")
+	}
+	exp, err := time.Parse(time.RFC3339, expires[0])
+	if err != nil {
+		return err
+	}
 	http.SetCookie(writer, &http.Cookie{
 		Name:    "jwt",
-		Value:   tokenString,
+		Value:   token[0],
 		Path:    "/",
-		Expires: time.Now().Add(time.Hour * 24),
+		Expires: exp,
 	})
 	return nil
 }
 
 func (us *UserService) Register(ctx context.Context, req *user.RegisterRequest) (*user.RegisterResponse, error) {
 	log.Printf("Register user")
-	var regData TRegisterRequest
-	err := json.NewDecoder(req.Body).Decode(&regData)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
+
+	if req.Login == "" || req.Email == "" || req.Password == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "check your query, there 3 required fields: login, email, password")
 	}
-	if regData.Login == "" || regData.Email == "" || regData.Password == "" {
-		http.Error(writer, "check your query, there 3 required fields: login, email, password", http.StatusBadRequest)
-		return
-	}
-	exists, err := cls.database.CheckUserExistsByLogin(regData.Login)
+	exists, err := cls.database.CheckUserExistsByLogin(req.Login)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
 	if exists {
-		http.Error(writer, "user with this login actually exists", http.StatusConflict)
-		return
+		return nil, status.Errorf(codes.AlreadyExists, "user with this login actually exists")
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(regData.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
-	log.Printf("UserData: login - %v, email - %v", regData.Login, regData.Email)
-	var user TUser
-	user.UserId = uuid.New()
-	user.Login = regData.Login
-	user.Email = regData.Email
-	user.PassHash = string(hashedPassword)
-	user.CreatedAt = time.Now()
-	err = cls.database.CreateUser(&user)
+	log.Printf("UserData: login - %v, email - %v", req.Login, req.Email)
+	var usr user.User
+	usr.UserId = uuid.New().String()
+	usr.Login = req.Login
+	usr.Email = req.Email
+	usr.PasswordHash = string(hashedPassword)
+	err = cls.database.CreateUser(&usr)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
-	err = cls.authClient.SetCookie(user.Login, user.UserId.String(), writer)
+	err = cls.authClient.SetMeta(usr.Login, usr.UserId, ctx)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
-	var resp TRegisterResponse
-	resp.Message = "Successful register"
-	resp.UserId = user.UserId.String()
-	data, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+	resp := user.RegisterResponse{
+		User: &usr,
 	}
-	writer.WriteHeader(http.StatusCreated)
-	writer.Write(data)
+	return &resp, nil
 }
 
 func (us *UserService) Login(ctx context.Context, req *user.LoginRequest) (*user.LoginResponse, error) {
 	log.Printf("Login user")
-	var loginData TLoginRequest
-	err := json.NewDecoder(req.Body).Decode(&loginData)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
+	if req.Login == "" || req.Password == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "check your query, there 2 required fields: login, password")
 	}
-	if loginData.Login == "" || loginData.Password == "" {
-		http.Error(writer, "check your query, there 2 required fields: login, password", http.StatusBadRequest)
-		return
-	}
-	exists, err := cls.database.CheckUserExistsByLogin(loginData.Login)
+	exists, err := cls.database.CheckUserExistsByLogin(req.Login)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
 	if !exists {
-		http.Error(writer, "user with this login doesn't exists", http.StatusNotFound)
-		return
+		return nil, status.Errorf(codes.NotFound, "user with this login doesn't exists")
 	}
-	user, err := cls.database.GetUserByLogin(loginData.Login)
+	usr, err := cls.database.GetUserByLogin(req.Login)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
-	log.Printf("UserData: login - %v", loginData.Login)
-	err = bcrypt.CompareHashAndPassword([]byte(user.PassHash), []byte(loginData.Password))
+	log.Printf("UserData: login - %v", req.Login)
+	err = bcrypt.CompareHashAndPassword([]byte(usr.PasswordHash), []byte(req.Password))
 	if err != nil {
-		http.Error(writer, "your password is incorrect", http.StatusUnauthorized)
-		return
+		return nil, status.Errorf(codes.Unauthenticated, "your password is incorrect")
 	}
-	err = cls.authClient.SetCookie(user.Login, user.UserId.String(), writer)
+	err = cls.authClient.SetMeta(usr.Login, usr.UserId, ctx)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
 	}
-	var resp TLoginResponse
-	resp.Message = "Successful login"
-	resp.User = *user
-	data, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+	resp := user.LoginResponse{
+		User: usr,
 	}
-	writer.WriteHeader(http.StatusOK)
-	writer.Write(data)
+	return &resp, nil
 }

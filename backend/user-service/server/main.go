@@ -4,13 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
+	"net"
 	"os"
 	"strconv"
 
-	"user-service/server/utils"
+	"messenger/user-service/server/utils"
 
-	"github.com/gorilla/mux"
+	user "messenger/user-service/server/user"
+
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -27,32 +29,30 @@ func main() {
 	if err != nil {
 		log.Fatal("Not get SERVER_PORT env variable")
 	}
-	posgresPort, err := strconv.Atoi(os.Getenv("POSGRES_PORT"))
+	redisPort, err := strconv.Atoi(os.Getenv("REDIS_PORT"))
 	if err != nil {
-		log.Fatal("Not get POSGRES_PORT env variable")
+		log.Fatal("Not get REDIS_PORT env variable")
 	}
 	var authConf utils.TAuthConfig
 	authConf.JwtPrivateStr = *privateKeyPath
 	authConf.JwtPublicStr = *publicKeyPath
 	var dbConf utils.TDBConfig
-	dbConf.Port = posgresPort
-	dbConf.Host = "user-service-postgres"
-	dbConf.DBName = "userdb"
-	dbConf.User = "userservice"
-	dbConf.Password = "userservicepassword"
-	dbConf.SSLMode = "disable"
+	dbConf.Port = redisPort
+	dbConf.Host = "user-service-redis"
 	err = utils.NewContext(authConf, dbConf)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	router := mux.NewRouter()
-	router.HandleFunc("/users/register", utils.RegisterHandler).Methods("POST")
-	router.HandleFunc("/users/login", utils.LoginHandler).Methods("POST")
-	router.HandleFunc("/users/profile", utils.GetProfileHandler).Methods("GET")
-	router.HandleFunc("/users/profile", utils.PutProfileHandler).Methods("PUT")
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+	s := grpc.NewServer()
+	user.RegisterUserProfileServiceServer(s, &utils.UserService{})
 
 	log.Printf("Staring main user server on port %d", port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", port), router)
+	err = s.Serve(lis)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
