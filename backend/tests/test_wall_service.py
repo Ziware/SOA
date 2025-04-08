@@ -207,6 +207,69 @@ def run_post_tests():
     else:
         print("\n❌ Some post-related tests failed.")
 
+# test private access
+
+def create_session():
+    """Create a new session for each user"""
+    return requests.Session()
+
+def register_custom(session, login, email):
+    """Function to register a new test user"""
+    user_data = {
+        "login": login,
+        "password": "secure_password_123",
+        "email": email
+    }
+    response = session.post(f"{BASE_URL}/users/register", json=user_data)
+    return response.status_code == 201
+
+def create_private_post(session):
+    """Create a private post"""
+    post_data = {
+        "title": "Private Post",
+        "description": "This is a private post",
+        "is_private": True,
+        "tags": ["private", "test"]
+    }
+    response = session.post(f"{BASE_URL}/posts/create", json=post_data)
+    if response.status_code == 200:
+        return response.json().get("post_id")
+    return None
+
+def test_private_post_access_restriction():
+    """Test the restriction of access to a private post by another user"""
+    print("\n=== Testing Private Post Access Restriction ===")
+    
+    # Create first user's session, register, login, and create a private post
+    session_user1 = create_session()
+    user1_login = f"user1_{int(time.time())}"
+    user1_email = f"user1_{int(time.time())}@example.com"
+    
+    assert register_custom(session_user1, user1_login, user1_email), "Registration for user1 failed"
+    private_post_id = create_private_post(session_user1)
+    assert private_post_id is not None, "Private post creation failed"
+
+    # Create second user's session, register, login
+    session_user2 = create_session()
+    user2_login = f"user2_{int(time.time())}"
+    user2_email = f"user2_{int(time.time())}@example.com"
+    
+    assert register_custom(session_user2, user2_login, user2_email), "Registration for user2 failed"
+
+    # Second user tries to access the private post of the first user
+    response = session_user2.get(f"{BASE_URL}/posts/{private_post_id}")
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {response.text}")
+
+    # Assert that accessing the private post results in a 403 Forbidden status
+    assert response.status_code == 403, "Expected forbidden access, but got a different response"
+
+    if response.status_code == 403:
+        print("✅ Access restriction to the private post is successfully enforced!")
+    else:
+        print("❌ Access restriction to the private post failed.")
+
 if __name__ == "__main__":
     # Then run post-related tests
     run_post_tests()
+    test_private_post_access_restriction()
