@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"messenger/api-gateway/handlers"
-	"messenger/user-service/server/utils"
+	"messenger/user-service/utils"
 )
 
 func main() {
@@ -22,6 +22,10 @@ func main() {
 	if userServiceURL == "" {
 		log.Fatal("Not get userServiceURL env variable")
 	}
+	wallServiceURL := os.Getenv("WALL_SERVICE_URL")
+	if wallServiceURL == "" {
+		log.Fatal("Not get wallServiceURL env variable")
+	}
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
 		log.Fatal("Not get SERVER_PORT env variable")
@@ -30,7 +34,7 @@ func main() {
 	authConf.JwtPublicStr = *publicKeyPath
 
 	defer handlers.CloseClients()
-	err := handlers.InitClients(authConf, userServiceURL)
+	err := handlers.InitClients(authConf, userServiceURL, wallServiceURL)
 	if err != nil {
 		log.Fatal("Failed to start grpc clients: ", err)
 	}
@@ -41,6 +45,12 @@ func main() {
 	r.HandleFunc("/users/login", handlers.LoginHandler).Methods("POST")
 	r.HandleFunc("/users/profile", handlers.GetProfileHandler).Methods("GET")
 	r.HandleFunc("/users/profile", handlers.PutProfileHandler).Methods("PUT")
+
+	r.HandleFunc("/posts/create", handlers.CreatePostHandler).Methods("POST")
+	r.HandleFunc("/posts/{id}", handlers.GetPostHandler).Methods("GET")
+	r.HandleFunc("/posts/{id}", handlers.UpdatePostHandler).Methods("PUT")
+	r.HandleFunc("/posts/{id}", handlers.DeletePostHandler).Methods("DELETE")
+	r.HandleFunc("/posts", handlers.ListPostsHandler).Methods("GET")
 
 	log.Printf("API listening on port %s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {

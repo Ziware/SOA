@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	user "messenger/user-service/server/user"
+	user "messenger/user-service/user"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -169,7 +169,7 @@ func (auth *TAuthClient) SetCookie(md metadata.MD, writer http.ResponseWriter) e
 
 func (us *UserService) Register(ctx context.Context, req *user.RegisterRequest) (*user.RegisterResponse, error) {
 	log.Printf("Register user")
-
+	log.Printf("%s %s %s", req.Email, req.Login, req.Password)
 	if req.Login == "" || req.Email == "" || req.Password == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "check your query, there 3 required fields: login, email, password")
 	}

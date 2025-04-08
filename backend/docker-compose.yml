@@ -9,6 +9,7 @@ services:
       - "8080:8080"
     environment:
       - USER_SERVICE_URL=user-service:8081
+      - WALL_SERVICE_URL=wall-service:8082
       - SERVER_PORT=8080
       - LOG_LEVEL=INFO
     depends_on:
@@ -27,7 +28,6 @@ services:
     environment:
       - SERVER_PORT=8081
       - REDIS_PORT=6379
-      - LOG_LEVEL=INFO
     networks:
       - app-network
       - db-network
@@ -36,11 +36,47 @@ services:
     image: redis:latest
     container_name: user-service-redis
     ports:
-      - "5432:6379"
+      - "1337:6379"
     volumes:
       - redis-data:/data
     networks:
       - db-network
+
+  wall-service:
+    build:
+      context: .
+      dockerfile: wall-service/Dockerfile
+    container_name: wall-service
+    restart: always
+    ports:
+      - "8082:8082"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=wall
+      - POSTGRES_HOST=wall-service-postgres
+      - SERVER_PORT=8082
+      - POSTGRES_PORT=5432
+    networks:
+      - app-network
+      - db-network
+
+
+  postgres:
+    image: postgres:13
+    container_name: wall-service-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: wall
+    volumes:
+      - postgres-data:/data
+      - ./wall-service/postgres_init:/docker-entrypoint-initdb.d/
+    networks:
+      - db-network
+
 
 networks:
   app-network:
@@ -50,3 +86,4 @@ networks:
 
 volumes:
   redis-data:
+  postgres-data:

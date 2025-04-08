@@ -3,7 +3,7 @@ package utils
 import (
 	"crypto/rsa"
 
-	user "messenger/user-service/server/user"
+	user "messenger/user-service/user"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -40,7 +40,7 @@ type UserService struct {
 
 var cls *TClients
 
-func NewContext(authConf TAuthConfig, dbConf TDBConfig) error {
+func NewClients(authConf TAuthConfig, dbConf TDBConfig) error {
 	cls = &TClients{}
 	var err error
 	cls.authClient, err = NewAuthClient(authConf.JwtPrivateStr, authConf.JwtPublicStr)

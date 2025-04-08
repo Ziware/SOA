@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
-	"messenger/user-service/server/utils"
+	"messenger/user-service/utils"
 
-	user "messenger/user-service/server/user"
+	user "messenger/user-service/user"
 
 	"google.golang.org/grpc"
 )
@@ -39,7 +39,7 @@ func main() {
 	var dbConf utils.TDBConfig
 	dbConf.Port = redisPort
 	dbConf.Host = "user-service-redis"
-	err = utils.NewContext(authConf, dbConf)
+	err = utils.NewClients(authConf, dbConf)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

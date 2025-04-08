@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	user "messenger/user-service/server/user"
+	user "messenger/user-service/user"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
