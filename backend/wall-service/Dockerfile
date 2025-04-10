@@ -4,8 +4,9 @@ FROM golang:1.24.1-alpine
 WORKDIR /app
 COPY . .
 
-WORKDIR /app/api-gateway/server
+WORKDIR /app/wall-service/server
 RUN go mod download -x
 RUN go build
 
-ENTRYPOINT ["./server", "--public", "public.key"]
+
+ENTRYPOINT ["./server"]
