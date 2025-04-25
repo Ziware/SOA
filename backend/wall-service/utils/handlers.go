@@ -167,12 +167,13 @@ func (ws *WallService) CreateComment(ctx context.Context, req *post.CreateCommen
 	}
 
 	commentCreatedEvent := &stats.PostCommented{
+		CommentId: comment.CommentId,
 		PostId:    req.PostId,
 		UserId:    req.UserId,
 		Timestamp: now.Unix(),
 	}
 
-	err = cls.pb.PublishCommentCreated(commentCreatedEvent)
+	err = cls.pb.PublishPostCommented(commentCreatedEvent)
 	if err != nil {
 		log.Printf("Failed to publish CommentCreated event: %v", err)
 	}

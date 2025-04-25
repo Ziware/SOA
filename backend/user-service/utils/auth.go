@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	stats "messenger/stats-service/stats"
 	user "messenger/user-service/user"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -197,6 +198,14 @@ func (us *UserService) Register(ctx context.Context, req *user.RegisterRequest) 
 	err = cls.authClient.SetMeta(usr.Login, usr.UserId, ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%s", err.Error())
+	}
+	userCreatedEvent := &stats.UserCreated{
+		UserId:    usr.UserId,
+		Timestamp: time.Now().Unix(),
+	}
+	err = cls.pb.PublishUserCreated(userCreatedEvent)
+	if err != nil {
+		log.Printf("Failed to publish CommentCreated event: %v", err)
 	}
 	resp := user.RegisterResponse{
 		User: &usr,

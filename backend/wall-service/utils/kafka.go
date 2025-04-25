@@ -11,16 +11,16 @@ import (
 )
 
 const (
-	TopicCommentCreated = "comment_created"
-	TopicPostViewed     = "post_viewed"
-	TopicPostLiked      = "post_liked"
+	TopicPostCommented = "post_commented"
+	TopicPostViewed    = "post_viewed"
+	TopicPostLiked     = "post_liked"
 )
 
 func NewPublisher(cfg *TKafkaConfig) (*TPublisher, error) {
 	writers := make(map[string]*kafka.Writer)
 
 	for _, topic := range []string{
-		TopicCommentCreated,
+		TopicPostCommented,
 		TopicPostViewed,
 		TopicPostLiked,
 	} {
@@ -47,14 +47,14 @@ func (p *TPublisher) Close() error {
 	return firstErr
 }
 
-func (p *TPublisher) PublishCommentCreated(ev *stats.PostCommented) error {
+func (p *TPublisher) PublishPostCommented(ev *stats.PostCommented) error {
 	msg, err := proto.Marshal(ev)
 	if err != nil {
-		return fmt.Errorf("marshal CommentCreated: %w", err)
+		return fmt.Errorf("marshal PostCommented: %w", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), p.timeout)
 	defer cancel()
-	return p.writers[TopicCommentCreated].WriteMessages(ctx, kafka.Message{Value: msg})
+	return p.writers[TopicPostCommented].WriteMessages(ctx, kafka.Message{Value: msg})
 }
 
 func (p *TPublisher) PublishPostViewed(ev *stats.PostViewed) error {

@@ -382,6 +382,12 @@ func ListCommentsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, err := ValidateClient.GetUserId(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	postID := vars["id"]
 
@@ -416,6 +422,7 @@ func ListCommentsHandler(w http.ResponseWriter, r *http.Request) {
 
 	req := &post.ListCommentsRequest{
 		PostId:     postID,
+		UserId:     userID,
 		PageNumber: int32(pageNumber),
 		PageSize:   int32(pageSize),
 	}

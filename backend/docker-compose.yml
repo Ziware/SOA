@@ -29,6 +29,7 @@ services:
     environment:
       - SERVER_PORT=8081
       - REDIS_PORT=6379
+      - KAFKA_BROKER=kafka:9092
     networks:
       - app-network
       - db-network
@@ -90,10 +91,26 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_JMX_PORT=9997
+      - KAFKA_JMX_HOSTNAME=kafka
     ports:
       - "9092:9092"
     networks:
       - app-network
+    volumes:
+      - kafka-data:/bitnami/kafka
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8888:8080
+    environment:
+      DYNAMIC_CONFIG_ENABLED: true
+    networks:
+      - app-network
+    volumes:
+      - kafka-ui-config:/etc/kafkaui
 
 networks:
   app-network:
@@ -104,3 +121,6 @@ networks:
 volumes:
   redis-data:
   postgres-data:
+  kafka-data:
+  kafka-ui-config:
+

@@ -608,7 +608,7 @@ components:
           format: date-time
           example: '2023-01-20T12:15:00Z'
       
-      Post:
+    Post:
       type: object
       properties:
         post_id:
@@ -632,7 +632,7 @@ components:
           items:
             type: string
 
-        Comment:
+    Comment:
       type: object
       properties:
         comment_id:

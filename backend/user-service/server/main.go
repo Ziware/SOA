@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 
 	"messenger/user-service/utils"
 
@@ -33,13 +34,24 @@ func main() {
 	if err != nil {
 		log.Fatal("Not get REDIS_PORT env variable")
 	}
+	kafkaBroker := os.Getenv("KAFKA_BROKER")
+	if kafkaBroker == "" {
+		log.Fatal("Not get KAFKA_BROKER env variable")
+	}
+
 	var authConf utils.TAuthConfig
 	authConf.JwtPrivateStr = *privateKeyPath
 	authConf.JwtPublicStr = *publicKeyPath
+
 	var dbConf utils.TDBConfig
 	dbConf.Port = redisPort
 	dbConf.Host = "user-service-redis"
-	err = utils.NewClients(authConf, dbConf)
+
+	var kafkaConf utils.TKafkaConfig
+	kafkaConf.Timeout = time.Second * 3
+	kafkaConf.Brokers = []string{kafkaBroker}
+
+	err = utils.NewClients(authConf, dbConf, &kafkaConf)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

@@ -7,24 +7,16 @@ from datetime import datetime
 BASE_URL = "http://localhost:8080"
 session = requests.Session()
 
-# Test data
-test_user = {
-    "login": f"testuser_{int(time.time())}",  # Create unique username based on timestamp
-    "password": "secure_password_123",
-    "email": f"test_{int(time.time())}@example.com"  # Create unique email based on timestamp
-}
-
-post_data = {
-    "title": "Initial Post",
-    "description": "This is a test post",
-    "creator_id": "1",
-    "is_private": False,
-    "tags": ["api", "test"]
-}
 
 def register_user():
     """Function to register a new test user"""
     print("\n=== Registering Test User ===")
+
+    test_user = {
+        "login": f"testuser_{int(time.time())}",  # Create unique username based on timestamp
+        "password": "secure_password_123",
+        "email": f"test_{int(time.time())}@example.com"  # Create unique email based on timestamp
+    }
 
     url = f"{BASE_URL}/users/register"
     headers = {"Content-Type": "application/json"}
@@ -49,6 +41,14 @@ def register_user():
 def test_create_post():
     """Test create post endpoint"""
     print("\n=== Testing Create Post ===")
+
+    post_data = {
+        "title": "Initial Post",
+        "description": "This is a test post",
+        "creator_id": "1",
+        "is_private": False,
+        "tags": ["api", "test"]
+    }
 
     url = f"{BASE_URL}/posts/create"
     headers = {"Content-Type": "application/json"}
@@ -269,7 +269,219 @@ def test_private_post_access_restriction():
     else:
         print("❌ Access restriction to the private post failed.")
 
+def test_view_post(post_id):
+    """Test registering a post view"""
+    print("\n=== Testing View Post ===")
+
+    url = f"{BASE_URL}/posts/{post_id}/view"
+    
+    response = session.post(url)
+
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {response.text}")
+
+    if response.status_code == 200:
+        print("✅ View post successful!")
+    else:
+        print("❌ View post failed.")
+
+    return response.status_code == 200
+
+def test_like_post(post_id):
+    """Test liking a post"""
+    print("\n=== Testing Like Post ===")
+
+    url = f"{BASE_URL}/posts/{post_id}/like"
+    
+    # Like the post
+    response = session.post(url)
+
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {response.text}")
+
+    if response.status_code == 200:
+        print("✅ Like post successful!")
+    else:
+        print("❌ Like post failed.")
+        return False
+        
+    return True
+
+def test_create_comment(post_id):
+    """Test creating a comment on a post"""
+    print("\n=== Testing Create Comment ===")
+
+    url = f"{BASE_URL}/posts/{post_id}/comments"
+    headers = {"Content-Type": "application/json"}
+    comment_data = {
+        "text": "This is a test comment"
+    }
+
+    response = session.post(url, json=comment_data, headers=headers)
+
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {response.text}")
+
+    if response.status_code == 201:
+        print("✅ Create comment successful!")
+        comment_id = response.json().get("comment_id")
+    else:
+        print("❌ Create comment failed.")
+        comment_id = None
+
+    return comment_id
+
+def test_list_comments(post_id):
+    """Test listing comments for a post"""
+    print("\n=== Testing List Comments ===")
+
+    url = f"{BASE_URL}/posts/{post_id}/comments"
+    
+    # Test with default pagination
+    response = session.get(url)
+
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {response.text}")
+
+    if response.status_code == 200:
+        print("✅ List comments successful!")
+    else:
+        print("❌ List comments failed.")
+        return False
+        
+    # Test with custom pagination
+    url_with_pagination = f"{url}?page_number=1&page_size=5"
+    response = session.get(url_with_pagination)
+    
+    print(f"Status Code (with pagination): {response.status_code}")
+    print(f"Response (with pagination): {response.text}")
+
+    if response.status_code == 200:
+        print("✅ List comments with pagination successful!")
+    else:
+        print("❌ List comments with pagination failed.")
+        return False
+        
+    return True
+
+def test_private_post_interaction_restriction():
+    """Test restrictions on interactions with private posts"""
+    print("\n=== Testing Private Post Interaction Restrictions ===")
+    
+    # Create first user's session, register, and create a private post
+    session_user1 = create_session()
+    user1_login = f"user1_interaction_{int(time.time())}"
+    user1_email = f"user1_interaction_{int(time.time())}@example.com"
+    
+    if not register_custom(session_user1, user1_login, user1_email):
+        print("❌ Registration for user1 failed")
+        return False
+    
+    private_post_id = create_private_post(session_user1)
+    if not private_post_id:
+        print("❌ Private post creation failed")
+        return False
+
+    # Create second user's session and register
+    session_user2 = create_session()
+    user2_login = f"user2_interaction_{int(time.time())}"
+    user2_email = f"user2_interaction_{int(time.time())}@example.com"
+    
+    if not register_custom(session_user2, user2_login, user2_email):
+        print("❌ Registration for user2 failed")
+        return False
+
+    # Second user tries to view the private post
+    response = session_user2.post(f"{BASE_URL}/posts/{private_post_id}/view")
+    print(f"View Status Code: {response.status_code}")
+    if response.status_code == 403:
+        print("✅ View restriction successfully enforced!")
+    else:
+        print(f"❌ Expected 403 for view, got {response.status_code}")
+        return False
+
+    # Second user tries to like the private post
+    response = session_user2.post(f"{BASE_URL}/posts/{private_post_id}/like")
+    print(f"Like Status Code: {response.status_code}")
+    if response.status_code == 403:
+        print("✅ Like restriction successfully enforced!")
+    else:
+        print(f"❌ Expected 403 for like, got {response.status_code}")
+        return False
+
+    # Second user tries to comment on the private post
+    headers = {"Content-Type": "application/json"}
+    comment_data = {"text": "This should not be allowed"}
+    response = session_user2.post(
+        f"{BASE_URL}/posts/{private_post_id}/comments", 
+        json=comment_data, 
+        headers=headers
+    )
+    print(f"Comment Status Code: {response.status_code}")
+    if response.status_code == 403:
+        print("✅ Comment restriction successfully enforced!")
+    else:
+        print(f"❌ Expected 403 for comment, got {response.status_code}")
+        return False
+
+    return True
+
+def run_extended_post_tests():
+    """Run tests for the new post-related endpoints"""
+    print("\nStarting Extended Post API Tests...")
+
+    # First ensure the user is registered and logged in
+    if not register_user():
+        print("❌ Cannot proceed with tests, user registration failed.")
+        return
+
+    # Test create post endpoint to get a post ID for further tests
+    post_id = test_create_post()
+
+    success = False
+
+    # Only proceed if post creation was successful
+    if post_id:
+        # Test view post endpoint
+        view_post_success = test_view_post(post_id)
+
+        # Test like post endpoint
+        like_post_success = test_like_post(post_id)
+
+        # Test create comment endpoint
+        comment_id = test_create_comment(post_id)
+        create_comment_success = comment_id is not None
+
+        # Test list comments endpoint
+        list_comments_success = test_list_comments(post_id)
+
+        # Check if all post tests passed
+        success = all([
+            view_post_success,
+            like_post_success,
+            create_comment_success,
+            list_comments_success
+        ])
+
+    # Test private post interaction restrictions
+    private_post_restriction_success = test_private_post_interaction_restriction()
+
+    # Final summary
+    print("\n=== Extended Post Test Summary ===")
+    print(f"View Post: {'✅ Passed' if view_post_success else '❌ Failed'}")
+    print(f"Like Post: {'✅ Passed' if like_post_success else '❌ Failed'}")
+    print(f"Create Comment: {'✅ Passed' if create_comment_success else '❌ Failed'}")
+    print(f"List Comments: {'✅ Passed' if list_comments_success else '❌ Failed'}")
+    print(f"Private Post Restriction: {'✅ Passed' if private_post_restriction_success else '❌ Failed'}")
+
+    if success and private_post_restriction_success:
+        print("\n✅ All extended post-related tests passed!")
+    else:
+        print("\n❌ Some extended post-related tests failed.")
+
+
 if __name__ == "__main__":
     # Then run post-related tests
     run_post_tests()
     test_private_post_access_restriction()
+    run_extended_post_tests()

@@ -23,9 +23,10 @@ const (
 
 type PostCommented struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PostId        string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Timestamp     int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	CommentId     string                 `protobuf:"bytes,1,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
+	PostId        string                 `protobuf:"bytes,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -58,6 +59,13 @@ func (x *PostCommented) ProtoReflect() protoreflect.Message {
 // Deprecated: Use PostCommented.ProtoReflect.Descriptor instead.
 func (*PostCommented) Descriptor() ([]byte, []int) {
 	return file_stats_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *PostCommented) GetCommentId() string {
+	if x != nil {
+		return x.CommentId
+	}
+	return ""
 }
 
 func (x *PostCommented) GetPostId() string {
@@ -201,15 +209,69 @@ func (x *PostLiked) GetTimestamp() int64 {
 	return 0
 }
 
+type UserCreated struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserCreated) Reset() {
+	*x = UserCreated{}
+	mi := &file_stats_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserCreated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserCreated) ProtoMessage() {}
+
+func (x *UserCreated) ProtoReflect() protoreflect.Message {
+	mi := &file_stats_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserCreated.ProtoReflect.Descriptor instead.
+func (*UserCreated) Descriptor() ([]byte, []int) {
+	return file_stats_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UserCreated) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UserCreated) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
 var File_stats_proto protoreflect.FileDescriptor
 
 const file_stats_proto_rawDesc = "" +
 	"\n" +
-	"\vstats.proto\x12\x05stats\"_\n" +
-	"\rPostCommented\x12\x17\n" +
-	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\"\\\n" +
+	"\vstats.proto\x12\x05stats\"~\n" +
+	"\rPostCommented\x12\x1d\n" +
+	"\n" +
+	"comment_id\x18\x01 \x01(\tR\tcommentId\x12\x17\n" +
+	"\apost_id\x18\x02 \x01(\tR\x06postId\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x1c\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"\\\n" +
 	"\n" +
 	"PostViewed\x12\x17\n" +
 	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x17\n" +
@@ -218,7 +280,10 @@ const file_stats_proto_rawDesc = "" +
 	"\tPostLiked\x12\x17\n" +
 	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x03R\ttimestampB\x03Z\x01.b\x06proto3"
+	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\"D\n" +
+	"\vUserCreated\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1c\n" +
+	"\ttimestamp\x18\x02 \x01(\x03R\ttimestampB\x03Z\x01.b\x06proto3"
 
 var (
 	file_stats_proto_rawDescOnce sync.Once
@@ -232,11 +297,12 @@ func file_stats_proto_rawDescGZIP() []byte {
 	return file_stats_proto_rawDescData
 }
 
-var file_stats_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_stats_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_stats_proto_goTypes = []any{
 	(*PostCommented)(nil), // 0: stats.PostCommented
 	(*PostViewed)(nil),    // 1: stats.PostViewed
 	(*PostLiked)(nil),     // 2: stats.PostLiked
+	(*UserCreated)(nil),   // 3: stats.UserCreated
 }
 var file_stats_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -257,7 +323,7 @@ func file_stats_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stats_proto_rawDesc), len(file_stats_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
