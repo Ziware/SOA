@@ -19,11 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WallService_CreatePost_FullMethodName = "/post.WallService/CreatePost"
-	WallService_DeletePost_FullMethodName = "/post.WallService/DeletePost"
-	WallService_UpdatePost_FullMethodName = "/post.WallService/UpdatePost"
-	WallService_GetPost_FullMethodName    = "/post.WallService/GetPost"
-	WallService_ListPosts_FullMethodName  = "/post.WallService/ListPosts"
+	WallService_CreatePost_FullMethodName    = "/post.WallService/CreatePost"
+	WallService_DeletePost_FullMethodName    = "/post.WallService/DeletePost"
+	WallService_UpdatePost_FullMethodName    = "/post.WallService/UpdatePost"
+	WallService_GetPost_FullMethodName       = "/post.WallService/GetPost"
+	WallService_ListPosts_FullMethodName     = "/post.WallService/ListPosts"
+	WallService_ViewPost_FullMethodName      = "/post.WallService/ViewPost"
+	WallService_LikePost_FullMethodName      = "/post.WallService/LikePost"
+	WallService_CreateComment_FullMethodName = "/post.WallService/CreateComment"
+	WallService_ListComments_FullMethodName  = "/post.WallService/ListComments"
 )
 
 // WallServiceClient is the client API for WallService service.
@@ -35,6 +39,10 @@ type WallServiceClient interface {
 	UpdatePost(ctx context.Context, in *UpdatePostRequest, opts ...grpc.CallOption) (*UpdatePostResponse, error)
 	GetPost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*GetPostResponse, error)
 	ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsResponse, error)
+	ViewPost(ctx context.Context, in *ViewPostRequest, opts ...grpc.CallOption) (*ViewPostResponse, error)
+	LikePost(ctx context.Context, in *LikePostRequest, opts ...grpc.CallOption) (*LikePostResponse, error)
+	CreateComment(ctx context.Context, in *CreateCommentRequest, opts ...grpc.CallOption) (*CreateCommentResponse, error)
+	ListComments(ctx context.Context, in *ListCommentsRequest, opts ...grpc.CallOption) (*ListCommentsResponse, error)
 }
 
 type wallServiceClient struct {
@@ -95,6 +103,46 @@ func (c *wallServiceClient) ListPosts(ctx context.Context, in *ListPostsRequest,
 	return out, nil
 }
 
+func (c *wallServiceClient) ViewPost(ctx context.Context, in *ViewPostRequest, opts ...grpc.CallOption) (*ViewPostResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ViewPostResponse)
+	err := c.cc.Invoke(ctx, WallService_ViewPost_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wallServiceClient) LikePost(ctx context.Context, in *LikePostRequest, opts ...grpc.CallOption) (*LikePostResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LikePostResponse)
+	err := c.cc.Invoke(ctx, WallService_LikePost_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wallServiceClient) CreateComment(ctx context.Context, in *CreateCommentRequest, opts ...grpc.CallOption) (*CreateCommentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateCommentResponse)
+	err := c.cc.Invoke(ctx, WallService_CreateComment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wallServiceClient) ListComments(ctx context.Context, in *ListCommentsRequest, opts ...grpc.CallOption) (*ListCommentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCommentsResponse)
+	err := c.cc.Invoke(ctx, WallService_ListComments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WallServiceServer is the server API for WallService service.
 // All implementations must embed UnimplementedWallServiceServer
 // for forward compatibility.
@@ -104,6 +152,10 @@ type WallServiceServer interface {
 	UpdatePost(context.Context, *UpdatePostRequest) (*UpdatePostResponse, error)
 	GetPost(context.Context, *GetPostRequest) (*GetPostResponse, error)
 	ListPosts(context.Context, *ListPostsRequest) (*ListPostsResponse, error)
+	ViewPost(context.Context, *ViewPostRequest) (*ViewPostResponse, error)
+	LikePost(context.Context, *LikePostRequest) (*LikePostResponse, error)
+	CreateComment(context.Context, *CreateCommentRequest) (*CreateCommentResponse, error)
+	ListComments(context.Context, *ListCommentsRequest) (*ListCommentsResponse, error)
 	mustEmbedUnimplementedWallServiceServer()
 }
 
@@ -128,6 +180,18 @@ func (UnimplementedWallServiceServer) GetPost(context.Context, *GetPostRequest) 
 }
 func (UnimplementedWallServiceServer) ListPosts(context.Context, *ListPostsRequest) (*ListPostsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPosts not implemented")
+}
+func (UnimplementedWallServiceServer) ViewPost(context.Context, *ViewPostRequest) (*ViewPostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ViewPost not implemented")
+}
+func (UnimplementedWallServiceServer) LikePost(context.Context, *LikePostRequest) (*LikePostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LikePost not implemented")
+}
+func (UnimplementedWallServiceServer) CreateComment(context.Context, *CreateCommentRequest) (*CreateCommentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateComment not implemented")
+}
+func (UnimplementedWallServiceServer) ListComments(context.Context, *ListCommentsRequest) (*ListCommentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListComments not implemented")
 }
 func (UnimplementedWallServiceServer) mustEmbedUnimplementedWallServiceServer() {}
 func (UnimplementedWallServiceServer) testEmbeddedByValue()                     {}
@@ -240,6 +304,78 @@ func _WallService_ListPosts_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WallService_ViewPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ViewPostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WallServiceServer).ViewPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WallService_ViewPost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WallServiceServer).ViewPost(ctx, req.(*ViewPostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WallService_LikePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LikePostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WallServiceServer).LikePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WallService_LikePost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WallServiceServer).LikePost(ctx, req.(*LikePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WallService_CreateComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCommentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WallServiceServer).CreateComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WallService_CreateComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WallServiceServer).CreateComment(ctx, req.(*CreateCommentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WallService_ListComments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCommentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WallServiceServer).ListComments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WallService_ListComments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WallServiceServer).ListComments(ctx, req.(*ListCommentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WallService_ServiceDesc is the grpc.ServiceDesc for WallService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +402,22 @@ var WallService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPosts",
 			Handler:    _WallService_ListPosts_Handler,
+		},
+		{
+			MethodName: "ViewPost",
+			Handler:    _WallService_ViewPost_Handler,
+		},
+		{
+			MethodName: "LikePost",
+			Handler:    _WallService_LikePost_Handler,
+		},
+		{
+			MethodName: "CreateComment",
+			Handler:    _WallService_CreateComment_Handler,
+		},
+		{
+			MethodName: "ListComments",
+			Handler:    _WallService_ListComments_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

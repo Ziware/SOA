@@ -52,6 +52,11 @@ func main() {
 	r.HandleFunc("/posts/{id}", handlers.DeletePostHandler).Methods("DELETE")
 	r.HandleFunc("/posts", handlers.ListPostsHandler).Methods("GET")
 
+	r.HandleFunc("/posts/{id}/view", handlers.ViewPostHandler).Methods("POST")
+	r.HandleFunc("/posts/{id}/like", handlers.LikePostHandler).Methods("POST")
+	r.HandleFunc("/posts/{id}/comments", handlers.CreateCommentHandler).Methods("POST")
+	r.HandleFunc("/posts/{id}/comments", handlers.ListCommentsHandler).Methods("GET")
+
 	log.Printf("API listening on port %s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatal("Failed to start server: ", err)

@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 
 	post "messenger/wall-service/post"
 	"messenger/wall-service/utils"
@@ -38,6 +39,11 @@ func main() {
 	if postgresHost == "" {
 		log.Fatal("Not get POSTGRES_HOST env variable")
 	}
+	kafkaBroker := os.Getenv("KAFKA_BROKER")
+	if kafkaBroker == "" {
+		log.Fatal("Not get KAFKA_BROKER env variable")
+	}
+
 	var dbConf utils.TDBConfig
 	dbConf.Host = postgresHost
 	dbConf.Port = postgresPort
@@ -46,7 +52,11 @@ func main() {
 	dbConf.Password = postgresPass
 	dbConf.SSLMode = "disable"
 
-	err = utils.NewClients(&dbConf)
+	var kafkaConf utils.TKafkaConfig
+	kafkaConf.Timeout = time.Second * 3
+	kafkaConf.Brokers = []string{kafkaBroker}
+
+	err = utils.NewClients(&dbConf, &kafkaConf)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

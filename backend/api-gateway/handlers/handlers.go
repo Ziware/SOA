@@ -266,6 +266,175 @@ func ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp.Posts)
+}
+
+func ViewPostHandler(w http.ResponseWriter, r *http.Request) {
+	err := ValidateClient.Validate(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := ValidateClient.GetUserId(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	postID := vars["id"]
+
+	req := &post.ViewPostRequest{
+		PostId: postID,
+		UserId: userID,
+	}
+
+	resp, err := WallServiceClient.ViewPost(context.Background(), req)
+	if err != nil {
+		log.Printf("Error viewing post: %s", err.Error())
+		errors.SendHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func LikePostHandler(w http.ResponseWriter, r *http.Request) {
+	err := ValidateClient.Validate(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := ValidateClient.GetUserId(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	postID := vars["id"]
+
+	req := &post.LikePostRequest{
+		PostId: postID,
+		UserId: userID,
+	}
+
+	resp, err := WallServiceClient.LikePost(context.Background(), req)
+	if err != nil {
+		log.Printf("Error liking post: %s", err.Error())
+		errors.SendHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
+	err := ValidateClient.Validate(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := ValidateClient.GetUserId(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	postID := vars["id"]
+
+	var requestBody struct {
+		Text string `json:"text"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	req := &post.CreateCommentRequest{
+		PostId: postID,
+		UserId: userID,
+		Text:   requestBody.Text,
+	}
+
+	resp, err := WallServiceClient.CreateComment(context.Background(), req)
+	if err != nil {
+		log.Printf("Error creating comment: %s", err.Error())
+		errors.SendHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp.Comment)
+}
+
+func ListCommentsHandler(w http.ResponseWriter, r *http.Request) {
+	err := ValidateClient.Validate(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	postID := vars["id"]
+
+	pageNumber := 1
+	pageSize := 10
+
+	queryParams := r.URL.Query()
+
+	if pageNumStr := queryParams.Get("page_number"); pageNumStr != "" {
+		if num, err := strconv.Atoi(pageNumStr); err == nil && num > 0 {
+			pageNumber = num
+		} else if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		} else if num <= 0 {
+			http.Error(w, "page_number should be above zero", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if pageSizeStr := queryParams.Get("page_size"); pageSizeStr != "" {
+		if size, err := strconv.Atoi(pageSizeStr); err == nil && size > 0 {
+			pageSize = size
+		} else if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		} else if size <= 0 {
+			http.Error(w, "page_size should be above zero", http.StatusBadRequest)
+			return
+		}
+	}
+
+	req := &post.ListCommentsRequest{
+		PostId:     postID,
+		PageNumber: int32(pageNumber),
+		PageSize:   int32(pageSize),
+	}
+
+	resp, err := WallServiceClient.ListComments(context.Background(), req)
+	if err != nil {
+		log.Printf("Error listing comments: %s", err.Error())
+		errors.SendHttpError(w, err)
+		return
+	}
+
+	response := struct {
+		Comments   []*post.Comment `json:"comments"`
+		TotalCount int32           `json:"total_count"`
+	}{
+		Comments:   resp.Comments,
+		TotalCount: resp.TotalCount,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }

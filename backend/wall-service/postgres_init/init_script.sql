@@ -8,3 +8,12 @@ CREATE TABLE IF NOT EXISTS posts (
     is_private BOOLEAN DEFAULT FALSE,
     tags TEXT[]
 );
+
+CREATE TABLE IF NOT EXISTS comments (
+    comment_id UUID PRIMARY KEY,
+    post_id UUID NOT NULL,
+    creator_id VARCHAR(255) NOT NULL,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

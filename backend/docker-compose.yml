@@ -14,6 +14,7 @@ services:
       - LOG_LEVEL=INFO
     depends_on:
       - user-service
+      - kafka
     networks:
       - app-network
 
@@ -57,10 +58,10 @@ services:
       - POSTGRES_HOST=wall-service-postgres
       - SERVER_PORT=8082
       - POSTGRES_PORT=5432
+      - KAFKA_BROKER=kafka:9092
     networks:
       - app-network
       - db-network
-
 
   postgres:
     image: postgres:13
@@ -77,6 +78,22 @@ services:
     networks:
       - db-network
 
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    environment:
+      - KAFKA_KRAFT_MODE=true
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    ports:
+      - "9092:9092"
+    networks:
+      - app-network
 
 networks:
   app-network:
