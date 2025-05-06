@@ -300,6 +300,218 @@ paths:
           description: Not Found
         '500':
           description: Error deleting post
+  /posts/{id}/view:
+    post:
+      summary: Register a post view
+      description: Records that the authenticated user has viewed the post
+      operationId: viewPost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the post to view
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: View successfully recorded
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden to view this post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/{id}/like:
+    post:
+      summary: Like a post
+      description: Toggles a like on the specified post for the authenticated user
+      operationId: likePost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the post to like
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Like operation successful
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden to like this post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/{id}/comments:
+    post:
+      summary: Create a new comment
+      description: Adds a comment to the specified post
+      operationId: createComment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the post to comment on
+      requestBody:
+        description: Comment text
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  example: "This is a great post!"
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden to comment on this post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List post comments
+      description: Gets a paginated list of comments for the specified post
+      operationId: listComments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the post to get comments for
+        - in: query
+          name: page_number
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+          required: false
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+          description: Number of comments per page
+          required: false
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total_count:
+                    type: integer
+                    description: Total number of comments for this post
+                    example: 42
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
@@ -396,7 +608,7 @@ components:
           format: date-time
           example: '2023-01-20T12:15:00Z'
       
-      Post:
+    Post:
       type: object
       properties:
         post_id:
@@ -419,6 +631,25 @@ components:
           type: array
           items:
             type: string
+
+    Comment:
+      type: object
+      properties:
+        comment_id:
+          type: string
+        post_id:
+          type: string
+        creator_id:
+          type: string
+        text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
 
     ErrorResponse:
       type: string

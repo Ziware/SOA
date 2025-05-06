@@ -2,10 +2,12 @@ package utils
 
 import (
 	"crypto/rsa"
+	"time"
 
 	user "messenger/user-service/user"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/segmentio/kafka-go"
 )
 
 //// Configs + Clients
@@ -29,9 +31,20 @@ type TDatabase struct {
 	db *redis.Client
 }
 
+type TKafkaConfig struct {
+	Brokers []string
+	Timeout time.Duration
+}
+
+type TPublisher struct {
+	writers map[string]*kafka.Writer
+	timeout time.Duration
+}
+
 type TClients struct {
 	authClient *TAuthClient
 	database   *TDatabase
+	pb         *TPublisher
 }
 
 type UserService struct {
@@ -40,7 +53,7 @@ type UserService struct {
 
 var cls *TClients
 
-func NewClients(authConf TAuthConfig, dbConf TDBConfig) error {
+func NewClients(authConf TAuthConfig, dbConf TDBConfig, kafkaConf *TKafkaConfig) error {
 	cls = &TClients{}
 	var err error
 	cls.authClient, err = NewAuthClient(authConf.JwtPrivateStr, authConf.JwtPublicStr)
@@ -48,6 +61,10 @@ func NewClients(authConf TAuthConfig, dbConf TDBConfig) error {
 		return err
 	}
 	cls.database, err = NewDatabase(dbConf)
+	if err != nil {
+		return err
+	}
+	cls.pb, err = NewPublisher(kafkaConf)
 	if err != nil {
 		return err
 	}

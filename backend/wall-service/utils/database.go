@@ -127,3 +127,66 @@ func (r *TDatabase) listPosts(limit, offset int, requestor_id string) ([]*post.P
 	}
 	return posts, nil
 }
+
+func (r *TDatabase) insertComment(comment *post.Comment) error {
+	query := `
+		INSERT INTO comments (comment_id, post_id, creator_id, text, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`
+
+	_, err := r.db.Exec(
+		query,
+		comment.CommentId,
+		comment.PostId,
+		comment.CreatorId,
+		comment.Text,
+		comment.CreatedAt,
+		comment.UpdatedAt,
+	)
+	if err != nil {
+		return status.Errorf(codes.Internal, "Failed to insert comment: %s", err.Error())
+	}
+
+	return nil
+}
+
+func (r *TDatabase) listComments(postID string, limit, offset int) ([]*post.Comment, error) {
+	query := `
+		SELECT comment_id, post_id, creator_id, text, created_at, updated_at
+		FROM comments
+		WHERE post_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.Query(query, postID, limit, offset)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to query comments: %s", err.Error())
+	}
+	defer rows.Close()
+
+	var comments []*post.Comment
+
+	for rows.Next() {
+		var comment post.Comment
+		err := rows.Scan(
+			&comment.CommentId,
+			&comment.PostId,
+			&comment.CreatorId,
+			&comment.Text,
+			&comment.CreatedAt,
+			&comment.UpdatedAt,
+		)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "Failed to scan comment: %s", err.Error())
+		}
+
+		comments = append(comments, &comment)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, status.Errorf(codes.Internal, "Error iterating comments: %s", err.Error())
+	}
+
+	return comments, nil
+}

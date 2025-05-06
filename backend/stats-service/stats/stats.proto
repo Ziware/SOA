@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package stats;
+option go_package = ".";
+
+message PostCommented {
+  string comment_id = 1;
+  string post_id = 2;
+  string user_id = 3;
+  int64 timestamp = 4;
+}
+
+message PostViewed {
+  string post_id = 1;
+  string user_id = 2;
+  int64 timestamp = 3;
+}
+
+message PostLiked {
+  string post_id = 1;
+  string user_id = 2;
+  int64 timestamp = 3;
+}
+
+message UserCreated {
+  string user_id = 1;
+  int64 timestamp = 2;
+}
